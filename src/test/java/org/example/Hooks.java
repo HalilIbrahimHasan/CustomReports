@@ -1,26 +1,47 @@
 package org.example;
 
-import framework.context.ScenarioContext;
-import framework.context.ScenarioContextHolder;
-import io.cucumber.java.Before;
 import io.cucumber.java.After;
+import io.cucumber.java.AfterAll;
+import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Hooks {
+
+    private static final List<ScenarioResult> ALL_SCENARIOS = new ArrayList<>();
 
     @Before
     public void beforeScenario(Scenario scenario) {
         ScenarioContext context = ScenarioContextHolder.get();
-        context.setScenarioName(scenario.getName());
-        context.setStartTime(System.currentTimeMillis());
+        ScenarioResult scenarioResult = context.getScenarioResult();
+
+        scenarioResult.setScenarioName(scenario.getName());
+        scenarioResult.setStartTime(System.currentTimeMillis());
+        scenarioResult.setSteps(new ArrayList<>());
     }
 
     @After
-    public void afterScenario() {
+    public void afterScenario(Scenario scenario) {
         ScenarioContext context = ScenarioContextHolder.get();
-        context.setEndTime(System.currentTimeMillis());
+        ScenarioResult scenarioResult = context.getScenarioResult();
 
-        // later you will send this to ReportManager
+        scenarioResult.setEndTime(System.currentTimeMillis());
+        scenarioResult.setDurationMs(
+                scenarioResult.getEndTime() - scenarioResult.getStartTime()
+        );
+        scenarioResult.setStatus(scenario.isFailed() ? "FAILED" : "PASSED");
+
+        ALL_SCENARIOS.add(scenarioResult);
         ScenarioContextHolder.clear();
+    }
+
+    @AfterAll
+    public static void generateReport() throws Exception {
+        CustomHtmlReportGenerator.generate(
+                ALL_SCENARIOS,
+                "test-output/custom-report.html"
+        );
     }
 }

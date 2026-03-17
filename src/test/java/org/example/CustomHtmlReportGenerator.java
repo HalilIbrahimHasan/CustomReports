@@ -1,5 +1,9 @@
 package org.example;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
 public class CustomHtmlReportGenerator {
 
     public static void generate(List<ScenarioResult> scenarios, String outputPath) throws Exception {
@@ -34,7 +38,8 @@ public class CustomHtmlReportGenerator {
 
         int i = 0;
         for (ScenarioResult sc : scenarios) {
-            String badgeClass = sc.getStatus().toLowerCase();
+            String badgeClass = sc.getStatus() != null ? sc.getStatus().toLowerCase() : "skipped";
+
             html.append("<div class='scenario'>");
             html.append("<div class='scenario-header' onclick=\"toggle('sc").append(i).append("')\">");
             html.append("<div><b>").append(sc.getScenarioName()).append("</b><div class='meta'>Duration: ")
@@ -44,13 +49,20 @@ public class CustomHtmlReportGenerator {
 
             html.append("<div class='scenario-content' id='sc").append(i).append("'>");
             for (StepResult step : sc.getSteps()) {
-                String stepBadge = step.getStatus().equalsIgnoreCase("PASSED") ? "passed" : "failed";
+                String stepBadge = step.getStatus().equalsIgnoreCase("PASSED") ? "passed"
+                        : step.getStatus().equalsIgnoreCase("FAILED") ? "failed"
+                        : "skipped";
+
                 html.append("<div class='step'>");
                 html.append("<div><b>").append(step.getStepName()).append("</b> ")
                         .append("<span class='").append(stepBadge).append("'>").append(step.getStatus()).append("</span></div>");
                 html.append("<div class='meta'>Step Duration: ").append(step.getDurationMs()).append(" ms</div>");
                 html.append("<div>").append(step.getDescription()).append("</div>");
-                html.append("<img src='").append(step.getScreenshotPath()).append("' alt='screenshot'/>");
+
+                if (step.getScreenshotPath() != null && !step.getScreenshotPath().isEmpty()) {
+                    html.append("<img src='").append(step.getScreenshotPath()).append("' alt='screenshot'/>");
+                }
+
                 html.append("</div>");
             }
             html.append("</div></div>");
@@ -59,6 +71,7 @@ public class CustomHtmlReportGenerator {
 
         html.append("</body></html>");
 
+        Files.createDirectories(Paths.get("test-output"));
         Files.writeString(Paths.get(outputPath), html.toString());
     }
 }

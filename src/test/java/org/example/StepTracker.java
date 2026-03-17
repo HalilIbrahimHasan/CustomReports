@@ -1,5 +1,7 @@
 package org.example;
 
+import org.openqa.selenium.WebDriver;
+
 public class StepTracker {
 
     public static void recordStep(
@@ -10,6 +12,7 @@ public class StepTracker {
             ScenarioContext scenarioContext) {
 
         long start = System.currentTimeMillis();
+
         StepResult step = new StepResult();
         step.setStepName(stepName);
         step.setDescription(description);
@@ -26,11 +29,14 @@ public class StepTracker {
             long end = System.currentTimeMillis();
             step.setEndTime(end);
             step.setDurationMs(end - start);
-            String screenshot = ScreenshotUtil.capture(driver,
-                    stepName.replaceAll("[^a-zA-Z0-9]", "_") + "_" + end);
-            step.setScreenshotPath(screenshot);
 
-            scenarioContext.addStep(step);
+            String screenshotPath = ScreenshotUtil.capture(
+                    driver,
+                    stepName.replaceAll("[^a-zA-Z0-9]", "_") + "_" + end
+            );
+            step.setScreenshotPath(screenshotPath);
+
+            scenarioContext.getScenarioResult().getSteps().add(step);
         }
     }
 }
